@@ -4,11 +4,17 @@ SECURITY:
 
 FEATURES:
 
+* core: Dynamic Membership
+
 IMPROVEMENTS:
-- node: Gossip condition. Two-speed heartbeat timer. Nodes always gossip but 
-  slow down when there are no uncommitted transactions in the hg.
    
 BUG FIXES:
+
+## v0.4.1 (January 28, 2019)
+
+IMPROVEMENTS:
+
+* Bug fixes and refactoring pulled from develop branch
 
 ## v0.4.0 (October 14, 2018)
 

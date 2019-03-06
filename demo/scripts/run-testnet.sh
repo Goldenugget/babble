@@ -14,7 +14,7 @@ docker network create \
 
 for i in $(seq 1 $N)
 do
-    docker run -d --name=client$i --net=babblenet --ip=172.77.10.$i -it mosaicnetworks/dummy:0.4.0 \
+    docker run -d --name=client$i --net=babblenet --ip=172.77.10.$i -it mosaicnetworks/dummy:0.4.2 \
     --name="client $i" \
     --client-listen="172.77.10.$i:1339" \
     --proxy-connect="172.77.5.$i:1338" \
@@ -24,7 +24,7 @@ done
 
 for i in $(seq 1 $N)
 do
-    docker create --name=node$i --net=babblenet --ip=172.77.5.$i mosaicnetworks/babble:0.4.0 run \
+    docker create --name=node$i --net=babblenet --ip=172.77.5.$i mosaicnetworks/babble:0.4.2 run \
     --heartbeat=100ms \
     --moniker="node$i" \
     --cache-size=50000 \
@@ -33,8 +33,8 @@ do
     --client-connect="172.77.10.$i:1339" \
     --service-listen="172.77.5.$i:80" \
     --sync-limit=500 \
+    --store \
     --log="debug" 
-    #--store \
     
     docker cp $MPWD/conf/node$i node$i:/.babble
     docker start node$i
