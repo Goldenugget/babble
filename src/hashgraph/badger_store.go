@@ -1,6 +1,7 @@
 package hashgraph
 
 import (
+	"encoding/binary"
 	"fmt"
 	"os"
 
@@ -16,6 +17,7 @@ const (
 	roundPrefix      = "round"
 	topoPrefix       = "topo"
 	blockPrefix      = "block"
+	firstBlockPrefix = "firstblock"
 	framePrefix      = "frame"
 )
 
@@ -83,6 +85,10 @@ func roundKey(index int) []byte {
 
 func blockKey(index int) []byte {
 	return []byte(fmt.Sprintf("%s_%09d", blockPrefix, index))
+}
+
+func firstBlockKey() []byte {
+	return []byte(firstBlockPrefix)
 }
 
 func frameKey(index int) []byte {
@@ -285,7 +291,22 @@ func (s *BadgerStore) SetBlock(block *Block) error {
 	if err := s.inmemStore.SetBlock(block); err != nil {
 		return err
 	}
-	return s.dbSetBlock(block)
+
+	if err := s.dbSetBlock(block); err != nil {
+		return err
+	}
+
+	firstBlock, err := s.dbGetFirstBlock()
+
+	if (err != nil && isDBKeyNotFound(err)) ||
+		block.Index() < firstBlock {
+
+		if err := s.dbSetFirstBlock(block.Index()); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *BadgerStore) SetFrame(frame *Frame) error {
@@ -694,6 +715,42 @@ func (s *BadgerStore) dbSetBlock(block *Block) error {
 
 	//insert [index] => [block bytes]
 	if err := tx.Set(key, val); err != nil {
+		return err
+	}
+
+	return tx.Commit(nil)
+}
+
+func (s *BadgerStore) dbGetFirstBlock() (int, error) {
+	var firstBlockBytes []byte
+	key := firstBlockKey()
+	err := s.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		if err != nil {
+			return err
+		}
+		firstBlockBytes, err = item.Value()
+		return err
+	})
+
+	if err != nil {
+		return -1, err
+	}
+
+	firstBlockIndex := int(binary.BigEndian.Uint32(firstBlockBytes))
+
+	return firstBlockIndex, err
+}
+
+func (s *BadgerStore) dbSetFirstBlock(index int) error {
+	tx := s.db.NewTransaction(true)
+	defer tx.Discard()
+
+	indexBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(indexBytes, uint32(index))
+
+	//insert [firstblock] => [block index]
+	if err := tx.Set(firstBlockKey(), indexBytes); err != nil {
 		return err
 	}
 

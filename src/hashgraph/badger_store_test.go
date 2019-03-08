@@ -670,6 +670,17 @@ func TestBadgerBlocks(t *testing.T) {
 			t.Fatal("Validator2 block signatures differ")
 		}
 	})
+
+	t.Run("Check FirstBlock", func(t *testing.T) {
+		firstBlock, err := store.dbGetFirstBlock()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if firstBlock != 0 {
+			t.Fatalf("FirstBlock should be 0, not %d", firstBlock)
+		}
+	})
 }
 
 func TestBadgerFrames(t *testing.T) {
