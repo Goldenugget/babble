@@ -350,6 +350,8 @@ func TestBootstrapAllNodes(t *testing.T) {
 	}
 	checkGossip(nodes, 0, t)
 
+	//
+
 	//Now try to recreate a network from the databases created in the first step
 	//and advance it to 20 blocks
 	newNodes := recycleNodes(nodes, logger, t)

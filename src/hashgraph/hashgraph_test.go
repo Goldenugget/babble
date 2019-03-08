@@ -1954,11 +1954,6 @@ func TestBootstrap(t *testing.T) {
 			h.LastCommitedRoundEvents, nh.LastCommitedRoundEvents)
 	}
 
-	if h.ConsensusTransactions != nh.ConsensusTransactions {
-		t.Fatalf("Bootstrapped hashgraph's ConsensusTransactions should be %#v, not %#v",
-			h.ConsensusTransactions, nh.ConsensusTransactions)
-	}
-
 	if h.PendingLoadedEvents != nh.PendingLoadedEvents {
 		t.Fatalf("Bootstrapped hashgraph's PendingLoadedEvents should be %#v, not %#v",
 			h.PendingLoadedEvents, nh.PendingLoadedEvents)

@@ -664,6 +664,12 @@ func (h *Hashgraph) InsertEventAndRunConsensus(event *Event, setWireInfo bool) e
 //InsertEvent attempts to insert an Event in the DAG. It verifies the signature,
 //checks the ancestors are known, and prevents the introduction of forks.
 func (h *Hashgraph) InsertEvent(event *Event, setWireInfo bool) error {
+	//Check if it is already saved
+	if _, err := h.Store.GetEvent(event.Hex()); err == nil {
+		h.logger.WithField("event", event.Hex()).Debugf("Event already exists")
+		return nil
+	}
+
 	//verify signature
 	if ok, err := event.Verify(); !ok {
 		if err != nil {
@@ -1430,15 +1436,32 @@ Hashgraph
 */
 func (h *Hashgraph) Bootstrap() error {
 	if badgerStore, ok := h.Store.(*BadgerStore); ok {
-		//Load Genesis PeerSet
-		peerSet, err := badgerStore.dbGetPeerSet(0)
+
+		firstBlockIndex, err := badgerStore.dbGetFirstBlock()
 		if err != nil {
-			return fmt.Errorf("No Genesis PeerSet: %v", err)
+			if isDBKeyNotFound(err) {
+				h.logger.Debugf("No FirstBlock, nothing to bootstrap")
+				return nil
+			}
+			return err
 		}
 
-		//Initialize the InmemStore with Genesis PeerSet. This has side-effects:
-		//It will create the corresponding Roots and populate the Repertoires.
-		badgerStore.inmemStore.SetPeerSet(0, peerSet)
+		firstBlock, err := badgerStore.dbGetBlock(firstBlockIndex)
+		if err != nil {
+			return fmt.Errorf("FirstBlock (index %d) not found: %v", firstBlockIndex, err)
+		}
+
+		firstBlockFrame, err := badgerStore.dbGetFrame(firstBlock.RoundReceived())
+		if err != nil {
+			return fmt.Errorf("FirstBlock Frame (index %d | round-received %d) not found: %v",
+				firstBlockIndex,
+				firstBlock.RoundReceived(),
+				err)
+		}
+
+		if err := h.Reset(firstBlock, firstBlockFrame); err != nil {
+			return err
+		}
 
 		//Retreive the Events from the underlying DB. They come out in topological
 		//order

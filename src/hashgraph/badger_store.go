@@ -279,12 +279,12 @@ func (s *BadgerStore) GetRoot(participant string) (*Root, error) {
 	return root, mapError(err, "Root", string(participantRootKey(participant)))
 }
 
-func (s *BadgerStore) GetBlock(rr int) (*Block, error) {
-	res, err := s.inmemStore.GetBlock(rr)
+func (s *BadgerStore) GetBlock(index int) (*Block, error) {
+	res, err := s.inmemStore.GetBlock(index)
 	if err != nil {
-		res, err = s.dbGetBlock(rr)
+		res, err = s.dbGetBlock(index)
 	}
-	return res, mapError(err, "Block", string(blockKey(rr)))
+	return res, mapError(err, "Block", string(blockKey(index)))
 }
 
 func (s *BadgerStore) SetBlock(block *Block) error {
